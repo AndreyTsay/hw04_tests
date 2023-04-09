@@ -60,10 +60,10 @@ class TaskPagesTests(TestCase):
                 'posts:post_detail', kwargs={'post_id': post_id}
             ): 'posts/post_detail.html',
             reverse(
-             'posts:post_edit', kwargs={'post_id': post_id}
+                'posts:post_edit', kwargs={'post_id': post_id}
             ): 'posts/create_post.html',
             reverse('posts:create_post'): 'posts/create_post.html',
-            }
+        }
 
         for reverse_name, template in templates_pages_names.items():
             with self.subTest(reverse_name=reverse_name):
