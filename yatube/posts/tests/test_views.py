@@ -40,7 +40,8 @@ class PaginatorViewsTest(TestCase):
         )
         self.post = Post.objects.create(
             author=self.user,
-            text="Тестовая запись",
+            text='Hoho',
+            group=self.group,
         )
 
     def test_paginator(self):
@@ -74,15 +75,29 @@ class PaginatorViewsTest(TestCase):
         """Шаблоны index, group_list, profile сформированы
         с правильным контекстом.
         """
-        pages = (
-            reverse('posts:index'),
-            reverse('posts:group_list', kwargs={'slug': self.group.slug}),
-            reverse('posts:profile', kwargs={'username': self.user.username})
-        )
-        for reverse_name in pages:
-            with self.subTest(reverse_name=reverse_name):
-                response = self.authorized_client.get(reverse_name)
-                self.assertIn(self.post, response.context.get('page_obj'))
+        data = {
+            INDEX_URL_NAME: (
+                INDEX_TEMPLATE, {}
+            ),
+            GROUP_LIST_URL_NAME: (
+                GROUP_LIST_TEMPLATE, {'slug': self.group.slug}
+            ),
+            PROFILE_URL_NAME: (
+                PROFILE_URL_TEMPLATE, {'username': self.user.username}
+            )}
+
+        for url_name, params in data.items():
+            with self.subTest(url_name=url_name):
+                template, kwargs = params
+                response = self.authorized_client.get(
+                    reverse(url_name, kwargs=kwargs))
+                page_obj = response.context.get('page_obj')
+                text = self.post
+                self.assertIsNotNone(page_obj)
+                self.assertIsInstance(page_obj, Page)
+                self.assertEqual(response.status_code, HTTPStatus.OK)
+                self.assertTemplateUsed(response, template)
+                self.assertIn(text, page_obj)
 
 
 class TaskPagesTests(TestCase):
