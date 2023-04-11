@@ -1,10 +1,10 @@
-from django.shortcuts import render, get_object_or_404
-from .models import Post, Group, User
-from django.core.paginator import Paginator
-from django.shortcuts import redirect
-from django.contrib.auth.decorators import login_required
-from .forms import PostForm
 
+from django.contrib.auth.decorators import login_required
+from django.core.paginator import Paginator
+from django.shortcuts import render, get_object_or_404, redirect
+
+from .models import Post, Group, User
+from .forms import PostForm
 
 NUMBER_OF_POSTS: int = 10
 
@@ -78,9 +78,8 @@ def post_edit(request, post_id):
     form = PostForm(request.POST or None, instance=post)
     if request.user.id != post.author.id:
         return redirect("posts:post_detail", post.pk)
-    if form.is_valid():
+    if request.method == 'POST' and form.is_valid():
         form.save(post)
-    if request.method == 'POST':
         return redirect("posts:post_detail", post.id)
     context = {
         "form": form,

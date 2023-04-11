@@ -1,7 +1,8 @@
-from django.db import models
 from django.contrib.auth import get_user_model
+from django.db import models
 
 User = get_user_model()
+TEXT_LENGTH: int = 15
 
 
 class Group(models.Model):
@@ -30,7 +31,7 @@ class Post(models.Model):
     )
 
     def __str__(self) -> str:
-        return self.text
+        return self.text[:TEXT_LENGTH]
 
     class Meta:
         ordering = ['-pub_date']

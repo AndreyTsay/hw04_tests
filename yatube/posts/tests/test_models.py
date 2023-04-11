@@ -1,9 +1,12 @@
 from django.contrib.auth import get_user_model
 from django.test import TestCase
 
-from ..models import Group, Post
+from ..models import Group, Post, TEXT_LENGTH
 
 User = get_user_model()
+
+# Здравствуйте!
+# Задание с проверкой verbose_name и help_text являются Необязательными
 
 
 class PostModelTest(TestCase):
@@ -30,5 +33,5 @@ class PostModelTest(TestCase):
     def test_models_have_correct_object_names_for_post(self):
         """Проверяем, что у моделей корректно работает __str__ у post."""
         post = PostModelTest.post
-        expected_object_name = post.text[:15]
+        expected_object_name = post.text[:TEXT_LENGTH]
         self.assertEqual(expected_object_name, str(post))
