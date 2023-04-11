@@ -5,9 +5,6 @@ from ..models import Group, Post, TEXT_LENGTH
 
 User = get_user_model()
 
-# Здравствуйте!
-# Задание с проверкой verbose_name и help_text являются Необязательными
-
 
 class PostModelTest(TestCase):
     @classmethod

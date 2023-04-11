@@ -6,8 +6,8 @@ from django.core.paginator import Page
 from django.test import Client, TestCase
 from django.urls import reverse
 
-from posts.models import Post, Group
 from posts.views import NUMBER_OF_POSTS
+from posts.models import Post, Group
 from posts.tests.constants import (
 
     GROUP_LIST_TEMPLATE,
@@ -44,22 +44,52 @@ class PaginatorViewsTest(TestCase):
             group=self.group,
         )
 
-    def test_paginator(self):
-        urls_expected_post_number = {
+    def test_paginator_index(self):
+        url_expected_post_number = {
             INDEX_URL_NAME: (
                 {},
                 Post.objects.all()[:NUMBER_OF_POSTS]
             ),
+        }
+        for url_name, params in url_expected_post_number.items():
+            kwargs, queryset = params
+            with self.subTest(url_name=url_name):
+                response = self.client.get(reverse(url_name, kwargs=kwargs))
+                self.assertEqual(response.status_code, HTTPStatus.OK)
+                page_obj = response.context.get('page_obj')
+                self.assertIsNotNone(page_obj)
+                self.assertIsInstance(page_obj, Page)
+                self.assertQuerysetEqual(
+                    page_obj, queryset, lambda x: x
+                )
+
+    def test_paginator_group_list(self):
+        url_expected_post_number = {
             GROUP_LIST_URL_NAME: (
                 {'slug': self.group.slug},
                 self.group.posts.all()[:NUMBER_OF_POSTS]
             ),
+        }
+        for url_name, params in url_expected_post_number.items():
+            kwargs, queryset = params
+            with self.subTest(url_name=url_name):
+                response = self.client.get(reverse(url_name, kwargs=kwargs))
+                self.assertEqual(response.status_code, HTTPStatus.OK)
+                page_obj = response.context.get('page_obj')
+                self.assertIsNotNone(page_obj)
+                self.assertIsInstance(page_obj, Page)
+                self.assertQuerysetEqual(
+                    page_obj, queryset, lambda x: x
+                )
+
+    def test_paginator_profile(self):
+        url_expected_post_number = {
             PROFILE_URL_NAME: (
                 {'username': self.user.username},
                 self.user.posts.all()[:NUMBER_OF_POSTS]
             ),
         }
-        for url_name, params in urls_expected_post_number.items():
+        for url_name, params in url_expected_post_number.items():
             kwargs, queryset = params
             with self.subTest(url_name=url_name):
                 response = self.client.get(reverse(url_name, kwargs=kwargs))
@@ -113,6 +143,7 @@ class TaskPagesTests(TestCase):
         cls.post = Post.objects.create(
             author=cls.user,
             text="Тестовая запись",
+            group=cls.group,
         )
 
     def setUp(self):
@@ -148,9 +179,34 @@ class TaskPagesTests(TestCase):
                 self.assertEqual(response.status_code, HTTPStatus.OK)
                 self.assertTemplateUsed(response, template)
 
+    def test_paginator_profile(self):
+        url_expected_post_number = {
+            PROFILE_URL_NAME: (
+                {'username': self.user.username},
+                self.user.posts.all()[:NUMBER_OF_POSTS]
+            ),
+        }
+        for url_name, params in url_expected_post_number.items():
+            kwargs, queryset = params
+            with self.subTest(url_name=url_name):
+                response = self.client.get(reverse(url_name, kwargs=kwargs))
+                self.assertEqual(response.status_code, HTTPStatus.OK)
+                page_obj = response.context.get('page_obj')
+                self.assertIsNotNone(page_obj)
+                self.assertIsInstance(page_obj, Page)
+                self.assertQuerysetEqual(
+                    page_obj, queryset, lambda x: x
+                )
+
     def test_posts_index_page_show_correct_context(self):
         """Шаблон posts/index сформирован с правильным контекстом."""
         response = self.client.get(reverse(INDEX_URL_NAME))
+        page_context = {
+            'title': 'Последние обновления на сайте',
+            'page_obj': 'page_obj',
+        }
+        for value in page_context:
+            self.assertIn(value, response.context)
         expected = list(Post.objects.all()[:NUMBER_OF_POSTS])
         self.assertEqual(list(response.context["page_obj"]), expected)
 
@@ -159,6 +215,12 @@ class TaskPagesTests(TestCase):
         response = self.client.get(
             reverse(GROUP_LIST_URL_NAME, kwargs={"slug": self.group.slug})
         )
+        page_context = {
+            'page_obj': 'page_obj',
+            'group': 'Тестовая группа',
+        }
+        for value in page_context:
+            self.assertIn(value, response.context)
         expected = list(
             Post.objects.filter(group_id=self.group.id)[:NUMBER_OF_POSTS])
         self.assertEqual(list(response.context["page_obj"]), expected)
@@ -168,6 +230,12 @@ class TaskPagesTests(TestCase):
         response = self.client.get(
             reverse(PROFILE_URL_NAME, args=(self.user.username,))
         )
+        page_context = {
+            'page_obj': 'page_obj',
+            'author': 'NAY',
+        }
+        for value in page_context:
+            self.assertIn(value, response.context)
         expected = list(
             Post.objects.filter(author_id=self.user.id)[:NUMBER_OF_POSTS])
         self.assertEqual(list(response.context["page_obj"]), expected)
@@ -176,9 +244,16 @@ class TaskPagesTests(TestCase):
         """Шаблон post_detail сформирован с правильным контекстом."""
         response = self.authorized_client.get(
             reverse(POST_DETAIL_URL_NAME, kwargs={'post_id': self.post.id}))
-        post_text = {response.context['post'].text: 'Тестовый пост',
-                     response.context['post'].group: self.group,
-                     response.context['post'].author: self.user.username}
+        page_context = {
+            'post': self.post,
+            'post_count': 'post_count'
+        }
+        for value in page_context:
+            self.assertIn(value, response.context)
+        response_to_post = response.context['post']
+        post_text = {response_to_post.text: 'Тестовый пост',
+                     response_to_post.group: self.group,
+                     response_to_post.author: self.user.username}
         for value, expected in post_text.items():
             self.assertEqual(post_text[value], expected)
 
@@ -186,6 +261,11 @@ class TaskPagesTests(TestCase):
         """Шаблон create_post сформирован с правильным контекстом."""
         response = self.authorized_client.get(
             reverse(POST_CREATE_URL_NAME))
+        page_context = {
+            "form": 'form'
+        }
+        for value in page_context:
+            self.assertIn(value, response.context)
         form_fields = {
             'text': forms.fields.CharField,
             'group': forms.fields.ChoiceField}

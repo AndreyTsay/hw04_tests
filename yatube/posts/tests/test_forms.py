@@ -77,7 +77,7 @@ class PostFormTests(TestCase):
         self.assertFalse(Post.objects.filter(text="Изменяем текст").exists())
         self.assertEqual(response.status_code, HTTPStatus.OK)
 
-    def test_post_edit_fail(self):
+    def test_create_post_fail(self):
         """Невалидное создание поста"""
         form_data = {"text": ""
                      }
@@ -85,3 +85,12 @@ class PostFormTests(TestCase):
             reverse("posts:create_post"), data=form_data, follow=True
         )
         self.assertFalse(Post.objects.filter(text="").exists())
+
+    def test_create_post_fail_not_login(self):
+        """Неавторизованное создание поста"""
+        form_data = {"text": "123"
+                     }
+        self.client.post(
+            reverse("posts:create_post"), data=form_data, follow=True
+        )
+        self.assertFalse(Post.objects.filter(text="123").exists())
