@@ -6,8 +6,8 @@ from django.core.paginator import Page
 from django.test import Client, TestCase
 from django.urls import reverse
 
-from posts.views import NUMBER_OF_POSTS
 from posts.models import Post, Group
+from posts.views import NUMBER_OF_POSTS
 from posts.tests.constants import (
 
     GROUP_LIST_TEMPLATE,
@@ -201,10 +201,10 @@ class TaskPagesTests(TestCase):
     def test_posts_index_page_show_correct_context(self):
         """Шаблон posts/index сформирован с правильным контекстом."""
         response = self.client.get(reverse(INDEX_URL_NAME))
-        page_context = {
-            'title': 'Последние обновления на сайте',
-            'page_obj': 'page_obj',
-        }
+        page_context = (
+            'title',
+            'page_obj',
+        )
         for value in page_context:
             self.assertIn(value, response.context)
         expected = list(Post.objects.all()[:NUMBER_OF_POSTS])
@@ -215,10 +215,10 @@ class TaskPagesTests(TestCase):
         response = self.client.get(
             reverse(GROUP_LIST_URL_NAME, kwargs={"slug": self.group.slug})
         )
-        page_context = {
-            'page_obj': 'page_obj',
-            'group': 'Тестовая группа',
-        }
+        page_context = (
+            'page_obj',
+            'group',
+        )
         for value in page_context:
             self.assertIn(value, response.context)
         expected = list(
@@ -230,10 +230,10 @@ class TaskPagesTests(TestCase):
         response = self.client.get(
             reverse(PROFILE_URL_NAME, args=(self.user.username,))
         )
-        page_context = {
-            'page_obj': 'page_obj',
-            'author': 'NAY',
-        }
+        page_context = (
+            'page_obj',
+            'author',
+        )
         for value in page_context:
             self.assertIn(value, response.context)
         expected = list(
@@ -244,10 +244,10 @@ class TaskPagesTests(TestCase):
         """Шаблон post_detail сформирован с правильным контекстом."""
         response = self.authorized_client.get(
             reverse(POST_DETAIL_URL_NAME, kwargs={'post_id': self.post.id}))
-        page_context = {
-            'post': self.post,
-            'post_count': 'post_count'
-        }
+        page_context = (
+            'post',
+            'post_count',
+        )
         for value in page_context:
             self.assertIn(value, response.context)
         response_to_post = response.context['post']
@@ -261,9 +261,9 @@ class TaskPagesTests(TestCase):
         """Шаблон create_post сформирован с правильным контекстом."""
         response = self.authorized_client.get(
             reverse(POST_CREATE_URL_NAME))
-        page_context = {
-            "form": 'form'
-        }
+        page_context = (
+            'form',
+        )
         for value in page_context:
             self.assertIn(value, response.context)
         form_fields = {
